@@ -3,6 +3,8 @@ import scrapy
 class USpider(scrapy.Spider):
     links = set()
     visited = {}
+    custom_settings = {'HTTPERROR_ALLOW_ALL': True}
+    download_delay = 0.25
         
     def parse_link(self, link, start_url):
         if link[0] == "/":
@@ -36,16 +38,20 @@ class USpider(scrapy.Spider):
         }
         
     def parse(self, response):
-        try:
-            urls = response.xpath("//a/@href").extract()
-        except:
-            urls = []
-        self.visited[response.url] = {
+        result = {
             "type": "internal",
-            "status": response.status,
-            "length": len(response.body),
-            "links": len(urls)
+            "status": response.status
         }
+        if response.status == 200:
+            result["length"] = len(response.body)
+            try:
+                urls = response.xpath("//a/@href").extract()
+            except:
+                urls = []
+            result["links"] = len(urls)
+        else:
+            urls = []
+        self.visited[response.url] = result
         yield {response.url: self.visited[response.url]}
         for url in urls:
             if url in self.links:
