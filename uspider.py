@@ -1,4 +1,5 @@
 import scrapy
+from urllib.parse import urljoin
 
 class USpider(scrapy.Spider):
     links = set()
@@ -7,11 +8,7 @@ class USpider(scrapy.Spider):
     download_delay = 0.25
         
     def parse_link(self, link, start_url):
-        if link[0] == "/":
-            return {
-                "type": "internal", 
-                "link": start_url + link
-            }
+        link = urljoin(start_url, link)
         if link.startswith("http://"):
             new_link = link[7:]
         elif link.startswith("https://"):
@@ -45,21 +42,20 @@ class USpider(scrapy.Spider):
         if response.status == 200:
             result["length"] = len(response.body)
             try:
-                urls = response.xpath("//a/@href").extract()
+                links = response.xpath("//a/@href").extract()
             except:
-                urls = []
-            result["links"] = len(urls)
+                links = []
+            result["links"] = len(links)
         else:
-            urls = []
+            links = []
         self.visited[response.url] = result
         yield {response.url: self.visited[response.url]}
-        for url in urls:
-            if url in self.links:
+        for link in links:
+            if link in self.links:
                 continue
-            self.links.add(url)
-            parsed_url = self.parse_link(url, response.url)
-            domain_index = url.find(self.allowed_domains[0])
+            self.links.add(link)
+            parsed_url = self.parse_link(link, response.url)
             if parsed_url["type"] == "internal":
                 yield response.follow(parsed_url["link"], self.parse)
             else:
-                yield {url: parsed_url}
+                yield {link: parsed_url}
