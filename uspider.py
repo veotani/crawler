@@ -18,6 +18,8 @@ class USpider(scrapy.Spider):
             return {
                 "type": "other"
             }
+        if new_link.startswith("www."):
+            new_link = new_link[4:]
         domain_index = new_link.find(self.allowed_domains[0])
         if domain_index == -1:
             return {
