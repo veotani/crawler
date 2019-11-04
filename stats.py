@@ -4,6 +4,7 @@ def get_stats(data):
     links = set()
     subdomains = {}
     counters = {}
+    status = {}
     total_space = 0
     total_links = 0
     
@@ -16,7 +17,8 @@ def get_stats(data):
         elif info["type"] == "internal":
             total_space += info["length"]
             total_links += info["links"]
-    return links, subdomains, counters, total_space, total_links
+            status[info["status"]] = status.get(info["status"], 0) + 1
+    return links, subdomains, counters, total_space, total_links, status
 
 if __name__ == "__main__":
     
@@ -24,7 +26,7 @@ if __name__ == "__main__":
     for result_file in files:
         with open(result_file) as file:
             data = json.load(file)
-        links, subdomains, counters, total_space, total_links = get_stats(data)
+        links, subdomains, counters, total_space, total_links, statuses = get_stats(data)
         print(f"Total links: {len(result)}, {total_links}")
         print(f"Unique links: {len(links)}\n")
         for link_type in counters:
@@ -42,3 +44,6 @@ if __name__ == "__main__":
         print("Subdomains use:")
         for subdomain in subdomains:
             print(f"{subdomain}: {subdomains[subdomain]}")
+        print("\nStatuses:")
+        for status in statuses:
+            print(f"{status}: {statuses[status]}")
