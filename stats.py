@@ -1,4 +1,5 @@
 import json
+import sys
 
 def get_stats(data):
     links = set()
@@ -21,8 +22,13 @@ def get_stats(data):
     return links, subdomains, counters, total_space, total_links, status
 
 if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        files = sys.argv[1:]
+    else:
+        files = ["spburesult.json", ]
     
-    files = ["spburesult.json", ]
+    print(sys.argv)
+    
     for result_file in files:
         with open(result_file) as file:
             data = json.load(file)
