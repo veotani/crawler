@@ -15,19 +15,19 @@ def get_stats(data):
         if info["type"] == "subdomain":
             subdomains[info["subdomain"]] = subdomains.get(info["subdomain"], 0) + 1
         elif info["type"] == "internal":
-            total_space += info["length"]
-            total_links += info["links"]
+            total_space += info.get("length", 0)
+            total_links += info.get("links", 0)
             status[info["status"]] = status.get(info["status"], 0) + 1
     return links, subdomains, counters, total_space, total_links, status
 
 if __name__ == "__main__":
     
-    files = ["spburesult.json", "msuresult.json"]
+    files = ["spburesult.json", ]
     for result_file in files:
         with open(result_file) as file:
             data = json.load(file)
         links, subdomains, counters, total_space, total_links, statuses = get_stats(data)
-        print(f"Total links: {len(result)}, {total_links}")
+        print(f"Total links: {total_links}")
         print(f"Unique links: {len(links)}\n")
         for link_type in counters:
             print(f"{link_type} links: {counters[link_type]}")
