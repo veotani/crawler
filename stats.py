@@ -47,8 +47,7 @@ if __name__ == "__main__":
         print(f"Average links by page: {avg_links}")
         print(f"\nSubdomains: {len(subdomains)}")
         print("Popular subdomains:")
-        sorted_subdomains = sorted(subdomains, key=lambda x: -subdomains[x])
-        sorted_subdomains = sorted_subdomains[:min(5, len(sorted_subdomains))]
+        sorted_subdomains = sorted(subdomains, key=lambda x: -subdomains[x])[:5]
         for subdomain in sorted_subdomains:
             print(f"{subdomain}: {subdomains[subdomain]}")
         print("\nStatuses:")
