@@ -27,9 +27,8 @@ if __name__ == "__main__":
     else:
         files = ["spburesult.json", ]
     
-    print(sys.argv)
-    
     for result_file in files:
+        print(f"\nProcessing {result_file}...\n")
         with open(result_file) as file:
             data = json.load(file)
         links, subdomains, counters, total_space, total_links, statuses = get_stats(data)
@@ -47,8 +46,10 @@ if __name__ == "__main__":
         print(f"Average space by page: {avg_space} bytes")
         print(f"Average links by page: {avg_links}")
         print(f"\nSubdomains: {len(subdomains)}")
-        print("Subdomains use:")
-        for subdomain in subdomains:
+        print("Popular subdomains:")
+        sorted_subdomains = sorted(subdomains, key=lambda x: -subdomains[x])
+        sorted_subdomains = sorted_subdomains[:min(5, len(sorted_subdomains))]
+        for subdomain in sorted_subdomains:
             print(f"{subdomain}: {subdomains[subdomain]}")
         print("\nStatuses:")
         for status in statuses:
