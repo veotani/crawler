@@ -1,6 +1,7 @@
 import json
 import sys
 
+
 def get_stats(data):
     links = set()
     subdomains = {}
@@ -20,6 +21,7 @@ def get_stats(data):
             total_links += info.get("links", 0)
             status[info["status"]] = status.get(info["status"], 0) + 1
     return links, subdomains, counters, total_space, total_links, status
+
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:

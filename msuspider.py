@@ -1,5 +1,6 @@
 import uspider
 
+
 class MSUSpider(uspider.USpider):
     name = "msuspider"
     start_urls = ["https://msu.ru"]

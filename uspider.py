@@ -1,6 +1,7 @@
 import scrapy
 from urllib.parse import urljoin
 
+
 class USpider(scrapy.Spider):
     links = set()
     visited = {}
