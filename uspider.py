@@ -1,13 +1,34 @@
 import scrapy
+import sqlite3
+import os
 from urllib.parse import urljoin
 
 
 class USpider(scrapy.Spider):
+    name = "unnamed_spider"
     links = set()
     visited = {}
     custom_settings = {'HTTPERROR_ALLOW_ALL': True}
     download_delay = 0.25
-        
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        if not os.path.exists(f"{self.name}.db"):
+            os.mknod(f"{self.name}.db")
+        self.conn = sqlite3.connect(f"{self.name}.db")
+        self.conn.cursor().execute("""
+        CREATE TABLE IF NOT EXISTS links (
+        url TEXT PRIMARY KEY,
+        type TEXT NOT NULL,
+        status INTEGER,
+        length INTEGER,
+        links INTEGER,
+        subdomain TEXT,
+        visited INTEGER,
+        completed INTEGER )
+        """)
+        self.conn.commit()
+
     def parse_link(self, link, start_url):
         link = urljoin(start_url, link)
         if link.startswith("http://"):
@@ -49,10 +70,24 @@ class USpider(scrapy.Spider):
             result["links"] = len(links)
         else:
             links = []
-        self.visited[response.url] = result
-        yield {response.url: self.visited[response.url]}
+        cursor = self.conn.cursor()
+        cursor.execute(f"""
+        INSERT INTO links (url, type, status, length, links, visited, completed) 
+        VALUES (
+        {response.url},
+        'internal',
+        {response.status},
+        {result.get('length'), 'NULL'},
+        {result.get('links'), 'NULL'},
+        {result.get('subdomain'), 'NULL'},
+        1,
+        0)
+        """)
+        self.conn.commit()
+        yield {response.url: result}
         for link in links:
-            if link in self.links:
+            cursor.execute(f"SELECT COUNT(*) FROM links WHERE url={link}")
+            if not cursor.fetchall()[0]:
                 continue
             self.links.add(link)
             parsed_url = self.parse_link(link, response.url)
