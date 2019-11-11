@@ -1,22 +1,19 @@
 import scrapy
 import sqlite3
-import os
 from urllib.parse import urljoin
 
 
 class USpider(scrapy.Spider):
-    name = "unnamed_spider"
-    links = set()
-    visited = {}
+    start_urls = []
     custom_settings = {'HTTPERROR_ALLOW_ALL': True}
     download_delay = 0.25
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        if not os.path.exists(f"{self.name}.db"):
-            os.mknod(f"{self.name}.db")
+        open(f"{self.name}.db", "a+")
         self.conn = sqlite3.connect(f"{self.name}.db")
-        self.conn.cursor().execute("""
+        cursor = self.conn.cursor()
+        cursor.execute("""
         CREATE TABLE IF NOT EXISTS links (
         url TEXT PRIMARY KEY,
         type TEXT NOT NULL,
@@ -28,6 +25,8 @@ class USpider(scrapy.Spider):
         completed INTEGER )
         """)
         self.conn.commit()
+        for link in cursor.execute("SELECT url FROM links WHERE type = 'internal' AND completed = 0"):
+            self.start_urls.append(link[0])
 
     def parse_link(self, link, start_url):
         link = urljoin(start_url, link)
@@ -72,26 +71,30 @@ class USpider(scrapy.Spider):
             links = []
         cursor = self.conn.cursor()
         cursor.execute(f"""
-        INSERT INTO links (url, type, status, length, links, visited, completed) 
+        INSERT OR REPLACE INTO links (
+        {", ".join([key for key in result])}, visited, completed) 
         VALUES (
-        {response.url},
-        'internal',
-        {response.status},
-        {result.get('length'), 'NULL'},
-        {result.get('links'), 'NULL'},
-        {result.get('subdomain'), 'NULL'},
-        1,
-        0)
+        {", ".join([f"'{result[key]}'" if type(result[key] == str) else str(result[key]) for key in result])}, 1, 0)
         """)
         self.conn.commit()
         yield {response.url: result}
         for link in links:
-            cursor.execute(f"SELECT COUNT(*) FROM links WHERE url={link}")
-            if not cursor.fetchall()[0]:
+            cursor.execute(f"SELECT COUNT(*) FROM links WHERE url='{link}'")
+            if cursor.fetchall()[0][0]:
                 continue
-            self.links.add(link)
             parsed_url = self.parse_link(link, response.url)
+            cursor.execute(f"""
+            INSERT INTO links (url, type, visited, completed) 
+            VALUES (
+            '{parsed_url["link"]}',
+            '{parsed_url["type"]}',
+            0,
+            0)
+            """)
+            self.conn.commit()
             if parsed_url["type"] == "internal":
                 yield response.follow(parsed_url["link"], self.parse)
             else:
                 yield {link: parsed_url}
+            cursor.execute(f"UPDATE links SET completed = 1 WHERE url = '{response.url}'")
+            self.conn.commit()
