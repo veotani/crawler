@@ -79,19 +79,23 @@ class USpider(scrapy.Spider):
         self.conn.commit()
         yield {response.url: result}
         for link in links:
-            cursor.execute(f"SELECT COUNT(*) FROM links WHERE url='{link}'")
+            parsed_url = self.parse_link(link, response.url)
+            cursor.execute(f"SELECT COUNT(*) FROM links WHERE url='{parsed_url.get('link', link)}'")
             if cursor.fetchall()[0][0]:
                 continue
-            parsed_url = self.parse_link(link, response.url)
-            cursor.execute(f"""
-            INSERT INTO links (url, type, visited, completed) 
-            VALUES (
-            '{parsed_url["link"]}',
-            '{parsed_url["type"]}',
-            0,
-            0)
-            """)
-            self.conn.commit()
+            try:
+                cursor.execute(f"""
+                INSERT INTO links (url, type, visited, completed) 
+                VALUES (
+                '{parsed_url.get("link", link)}',
+                '{parsed_url["type"]}',
+                0,
+                0)
+                """)
+                self.conn.commit()
+            except sqlite3.IntegrityError:
+                print(f"IntegrityError. {parsed_url.get('link', link)}")
+                continue
             if parsed_url["type"] == "internal":
                 yield response.follow(parsed_url["link"], self.parse)
             else:
