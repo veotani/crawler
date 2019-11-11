@@ -30,10 +30,14 @@ class USpider(scrapy.Spider):
 
     def parse_link(self, link, start_url):
         link = urljoin(start_url, link)
-        if link.startswith("http://"):
-            new_link = link[7:]
-        elif link.startswith("https://"):
-            new_link = link[8:]
+        if link[-1] == '/':
+            new_link = link[:-1]
+        else:
+            new_link = link
+        if new_link.startswith("http://"):
+            new_link = new_link[7:]
+        elif new_link.startswith("https://"):
+            new_link = new_link[8:]
         else:
             return {
                 "type": "other"
