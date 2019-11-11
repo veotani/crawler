@@ -9,17 +9,18 @@ def get_stats(data):
     status = {}
     total_space = 0
     total_links = 0
-    
-    for link in data:
-        url, info = link.popitem()
-        links.add(url)
-        counters[info["type"]] = counters.get(info["type"], 0) + 1
-        if info["type"] == "subdomain":
-            subdomains[info["subdomain"]] = subdomains.get(info["subdomain"], 0) + 1
-        elif info["type"] == "internal":
-            total_space += info.get("length", 0)
-            total_links += info.get("links", 0)
-            status[info["status"]] = status.get(info["status"], 0) + 1
+
+    for part in data:
+        for link in part:
+            url, info = link.popitem()
+            links.add(url)
+            counters[info["type"]] = counters.get(info["type"], 0) + 1
+            if info["type"] == "subdomain":
+                subdomains[info["subdomain"]] = subdomains.get(info["subdomain"], 0) + 1
+            elif info["type"] == "internal":
+                total_space += info.get("length", 0)
+                total_links += info.get("links", 0)
+                status[info["status"]] = status.get(info["status"], 0) + 1
     return links, subdomains, counters, total_space, total_links, status
 
 
@@ -32,7 +33,15 @@ if __name__ == "__main__":
     for result_file in files:
         print(f"\nProcessing {result_file}...\n")
         with open(result_file) as file:
-            data = json.load(file)
+            file_data = file.read()
+        if file_data[0] == "[":
+            file_data = file_data[1:]
+        if file_data[-1] == "]":
+            file_data = file_data[:-1]
+        parts = [f"[{p}]" for p in file_data.split("][")]
+        data = []
+        for part in parts:
+            data.append(json.loads(part))
         links, subdomains, counters, total_space, total_links, statuses = get_stats(data)
         print(f"Total links: {total_links}")
         print(f"Unique links: {len(links)}\n")
