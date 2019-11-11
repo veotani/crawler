@@ -1,7 +1,6 @@
 import os
 import json
 import unittest
-from scrapy.crawler import CrawlerRunner
 from scrapy.crawler import CrawlerProcess
 
 from page_with_cycle_spider import PageWithCycleSpider

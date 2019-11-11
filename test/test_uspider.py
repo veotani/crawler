@@ -1,6 +1,8 @@
 import unittest
+import requests
 
 from uspider import USpider
+from scrapy.http import Response, Request, TextResponse
 
 
 class TestUSpider(unittest.TestCase):
@@ -24,7 +26,18 @@ class TestUSpider(unittest.TestCase):
         self.assertEqual(test_reverse['type'], 'external')
 
     def test_parse(self):
-        pass
+        url = 'https://computer.howstuffworks.com/internet/basics/question180.htm'
+        data = requests.get(url)
+        r = TextResponse(
+            url=url,
+            status=data.status_code,
+            body=data.content
+        )
+        uspider = USpider(name="test")
+        uspider.allowed_domains = ['computer.howstuffworks.com']
+        res = uspider.parse(r)
+        self.assertEqual(next(res).get(url)['links'], 83)
+
 
 if __name__ == '__main__':
     unittest.main()
